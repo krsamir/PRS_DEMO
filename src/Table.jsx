@@ -1,4 +1,5 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
+import axios from "axios";
 import { AgGridReact } from "ag-grid-react";
 import {
   Button,
@@ -16,12 +17,33 @@ import "ag-grid-community/dist/styles/ag-grid.css";
 import "ag-grid-community/dist/styles/ag-theme-alpine.css";
 import "./App.css";
 export default function Table() {
+  const [rowData, setRowData] = useState([]);
   const gridRef = useRef(null);
   const [open, setOpen] = React.useState(false);
   const [isEdit, setEdit] = React.useState(false);
   const [data, setData] = useState([
     { make: "", model: "", price: "", id: "" },
   ]);
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/getData")
+      .then((res) => {
+        console.log(res.data.data);
+        setRowData(res.data.data);
+      })
+      .catch((e) => console.log(e));
+  }, []);
+
+  const fetchData = async () => {
+    await axios
+      .get("http://localhost:5000/getData")
+      .then((res) => {
+        console.log(res.data.data);
+        setRowData(res.data.data);
+      })
+      .catch((e) => console.log(e));
+  };
+
   const handleClickOpen = () => {
     setOpen(true);
   };
@@ -34,11 +56,6 @@ export default function Table() {
 
   const [selectedData, setSelectedData] = useState([]);
   const [gridApi, setGridApi] = useState(null);
-  const rowData = [
-    { id: 1, make: "Toyota", model: "Celica", price: 25000 },
-    { id: 2, make: "Ford", model: "Mondeo", price: 52000 },
-    { id: 3, make: "Porsche", model: "Boxter", price: 72000 },
-  ];
 
   const columnDefs = [
     {
@@ -75,11 +92,18 @@ export default function Table() {
     setData(parsedData);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    await axios
+      .post("http://localhost:5000/addData", data)
+      .then((res) => {
+        console.log(res.data);
+        gridApi.applyTransaction({ add: [res.data] });
+        // fetchData();
+      })
+      .catch((e) => console.log(e));
     console.log(data);
     // client side data entry
     // optimised api call - not to again call data for feeding data
-    gridApi.applyTransaction({ add: data });
     handleClose();
     setEdit(false);
     // need to make server api call for saving
